@@ -270,7 +270,7 @@ function arrayLog(array){
     }
 }
 
-function realFFT(array){
+function realFFT_1(array){
     let ret = dft(array,0);
     return [ret.map( (c) => c.re), ret.map( (c) => c.im )];
 }
@@ -297,6 +297,8 @@ function realFFT_2(array){
     return [real,img];
     
 }
+
+var realFFT = realFFT_2;
 
 
 

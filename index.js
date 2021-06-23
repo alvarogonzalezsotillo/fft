@@ -8,7 +8,7 @@ function loaded(){
     canvas = document.getElementById("canvas");
     context = canvas.getContext("2d");
     window.addEventListener('resize', fitCanvas);
-    window.setInterval( fillCanvas, 20000 ); 
+    window.setInterval( fillCanvas, 20 ); 
     fitCanvas();
 }
 
@@ -53,28 +53,31 @@ let center = 1;
 
 function fillCanvas(){
     let array = [];
-    center += 1;
+    center += 7;
     let steps = 1024;
     center %= steps;
     for( let i = 0 ; i < steps ; i += 1 ){
-        array[i] = (i < center ) ? 1 : 0;
-        array[i] = 2*Math.sin( i*2*Math.PI/steps )
-                   //+ Math.sin( i/1000 );
+        array[i] = (i < center && i > center-40) ? 2 : 0;
+        array[i] += (i < center + 40 && i > center-20) ? -2 : 0;
+        array[i] += (i < center + 140 && i > center-120) ? -1 : 0;
+    //      array[i] = 2*Math.sin( i*2*Math.PI/steps )
+        //                 + Math.sin( i*4*Math.PI/steps );
     }
 
     clearCanvas();
 
-    drawArray(array,0,150,canvas.width,20);
+    drawArray('original',array,0,100,canvas.width,20);
 
-    [real,img] = realFFT(array.slice());
+    let [real,img] = realFFT(array.slice());
 
-    drawArray(real,0,300,canvas.width,10);
+    drawArray('real',real,0,200,canvas.width,1);
 
-    drawArray(img,0,450,canvas.width,10);
+    drawArray('img',img,0,300,canvas.width,1);
 
-    let reconstruida = recoverFFT(real,img,0,real.length/2);
-
-    drawArray(reconstruida,0,600,canvas.width,10);
+    for( let fidelidad = 30 ; fidelidad <= 150 ; fidelidad += 30 ){
+        let reconstruida = recoverFFT(real,img,0,fidelidad);
+        drawArray(`reconstruida(${fidelidad})`,reconstruida,0,300+(fidelidad*100/30),canvas.width,0.05);
+    }
     
     console.log(img);
 
@@ -84,18 +87,18 @@ function fillCanvas(){
 function recoverFFT(real,img,min,max){
     min = min || 0;
     max = max || real.length;
-    let length = real.length;
-    let ret = new Array(length);
-    for( let x = 0 ; x < length ; x += 1 ){
+    let steps = real.length;
+    let ret = new Array(steps);
+    for( let x = 0 ; x < steps; x += 1 ){
         ret[x] = 0;
     }
 
     for(let f = min ; f < max ; f += 1 ){
         let m = Math.sqrt( img[f]**2 + real[f]**2 );
-        let phase = 0;
+        let phase = Math.atan2(real[f],img[f]);
 
-        for( let x = 0 ; x < ret.length ; x += 1 ){
-            let angle = x*f/re + phase;
+        for( let x = 0 ; x < steps; x += 1 ){
+            let angle = x*f/(steps/(2*Math.PI)) + phase;
             ret[x] += m*Math.sin(angle);
         }
     }
@@ -104,7 +107,7 @@ function recoverFFT(real,img,min,max){
 }
 
 
-function drawArray(array,x0,y0,width,zoomy=1){
+function drawArray(label,array,x0,y0,width,zoomy=1){
     let step = width/array.length;
     let xs = [];
     let ys = [];
@@ -112,10 +115,7 @@ function drawArray(array,x0,y0,width,zoomy=1){
         xs[i] = x0 + i*step;
         ys[i] = y0 + array[i]*zoomy;
     }
-
+    context.fillStyle = '#000000';
+    context.fillText(label,x0,y0-20);
     linesTo(xs,ys);
 }
-
-
-
-
